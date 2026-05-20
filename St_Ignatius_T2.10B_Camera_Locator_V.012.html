@@ -94,7 +94,7 @@ function resetView(){const vw=viewer.clientWidth,vh=viewer.clientHeight;scale=Ma
 
 function navigateTo(cam){
   const vw=viewer.clientWidth,vh=viewer.clientHeight;
-  scale=Math.min(vw/imgW,vh/imgH)*2.5;
+  scale=Math.min(vw/imgW,vh/imgH)*4.5;
   applyT(vw/2-(cam.x/100)*imgW*scale,vh/2-(cam.y/100)*imgH*scale);
   setActive(cam.id);
   document.getElementById('status').textContent=`${cam.id} — ${cam.attr} — ${cam.mount} — FOV: ${cam.fov}${cam.added?' ★ Added by Dynamic':''}`;
