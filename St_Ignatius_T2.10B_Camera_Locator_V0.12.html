@@ -41,6 +41,8 @@
   body.list-hidden #cam-list { display: none; }
   body.list-hidden #toggle-list { left: 0; }
   body.list-hidden #canvas-wrap { left: 0; }
+  #loading { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+              color: #e91e8c; font-size: 18px; font-weight: bold; z-index: 200; }
 </style>
 </head>
 <body>
@@ -54,16 +56,14 @@
 <div id="cam-label"><span id="active-cam">—</span><span id="active-src"></span></div>
 <div id="toggle-list" onclick="toggleList()" title="Toggle camera list">☰</div>
 <div id="cam-list" id="list-panel"></div>
-<div id="canvas-wrap" id="wrap">
-  <canvas id="cv"></canvas>
-</div>
+<div id="canvas-wrap" id="wrap"><canvas id="cv"></canvas></div>
+<div id="loading">Loading floor plan...</div>
 <div id="zoom-btns">
   <button onclick="zoom(1.3)">+</button>
   <button onclick="zoom(0.77)">−</button>
   <button onclick="resetView()" style="font-size:13px;">↺</button>
 </div>
 <script>
-const SHEET = "T2.10B";
 const IMG_W = 10368, IMG_H = 7776;
 const CAMS = {
     "img_w": 10368,
@@ -155,12 +155,17 @@ const wrap = document.getElementById('canvas-wrap');
 const listPanel = document.getElementById('cam-list');
 const activeCamEl = document.getElementById('active-cam');
 const activeSrcEl = document.getElementById('active-src');
+const loadingEl = document.getElementById('loading');
 
-let scale = 0.12, img = null, activeCam = null;
+// Initial scale: fit to viewport width
+let scale = Math.min(0.15, (window.innerWidth - 220) / IMG_W);
+let activeCam = null;
+let imgLoaded = false;
 
-const urlParams = new URLSearchParams(window.location.search);
-const targetCam = urlParams.get('cam');
+// Read cam from URL — works whether opened directly or via hyperlink
+const targetCam = new URLSearchParams(window.location.search).get('cam');
 
+// Build sidebar list
 CAM_IDS.forEach(kn => {
   const cam = CAMS[kn];
   const div = document.createElement('div');
@@ -172,35 +177,59 @@ CAM_IDS.forEach(kn => {
   listPanel.appendChild(div);
 });
 
-img = new Image();
+// Load image
+const img = new Image();
 img.onload = () => {
-  draw();
-  if (targetCam && CAMS[targetCam]) setTimeout(() => selectCam(targetCam), 300);
+  imgLoaded = true;
+  loadingEl.style.display = 'none';
+  // If a cam was requested via URL, zoom to it; otherwise show full sheet
+  if (targetCam && CAMS[targetCam]) {
+    // Zoom in closer for the targeted camera
+    scale = 0.35;
+    draw(targetCam);
+    // Scroll so the camera is centred in the viewport
+    const cam = CAMS[targetCam];
+    const x = cam.x * scale;
+    const y = cam.y * scale;
+    // Use requestAnimationFrame to ensure canvas has painted before scrolling
+    requestAnimationFrame(() => {
+      wrap.scrollLeft = Math.max(0, x - wrap.clientWidth / 2);
+      wrap.scrollTop  = Math.max(0, y - wrap.clientHeight / 2);
+      // Highlight in sidebar
+      activeCamEl.textContent = targetCam;
+      const srcLabel = CAMS[targetCam].source === 'rcp' ? ' — assumed from RCP'
+                      : CAMS[targetCam].source === 'sca' ? ' — SCA Rev3' : ' — Rev3 keynoted';
+      activeSrcEl.textContent = srcLabel;
+      activeCam = targetCam;
+      const li = document.getElementById('li-' + targetCam);
+      if (li) { li.classList.add('active'); li.scrollIntoView({block:'nearest'}); }
+    });
+  } else {
+    draw();
+  }
 };
+img.onerror = () => { loadingEl.textContent = 'Image failed to load.'; };
 img.src = 'img_T2.10B.webp';
 
 function draw(highlight=null) {
   const w = Math.round(IMG_W * scale), h = Math.round(IMG_H * scale);
   cv.width = w; cv.height = h;
-  if (img.complete && img.naturalWidth) ctx.drawImage(img, 0, 0, w, h);
+  if (imgLoaded) ctx.drawImage(img, 0, 0, w, h);
   CAM_IDS.forEach(kn => {
     const cam = CAMS[kn];
     const x = cam.x * scale, y = cam.y * scale;
     const r = Math.max(8, 14 * scale);
     const isActive = kn === highlight;
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI*2);
-    ctx.fillStyle = isActive ? '#e91e8c' : 'rgba(233,30,140,0.35)';
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
+    ctx.fillStyle = isActive ? '#e91e8c' : 'rgba(233,30,140,0.4)';
     ctx.fill();
     ctx.strokeStyle = isActive ? '#fff' : '#e91e8c';
-    ctx.lineWidth = isActive ? 2.5 : 1.5;
-    ctx.stroke();
+    ctx.lineWidth = isActive ? 2.5 : 1.5; ctx.stroke();
     if (isActive || scale > 0.18) {
       ctx.fillStyle = isActive ? '#fff' : '#e91e8c';
-      ctx.font = `bold ${Math.max(8, Math.round(10*scale))}px Arial`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(kn, x, y - r - Math.max(6, 8*scale));
+      ctx.font = `bold ${Math.max(9, Math.round(11*scale))}px Arial`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(kn, x, y - r - Math.max(6, 9*scale));
     }
   });
 }
@@ -209,14 +238,17 @@ function selectCam(kn) {
   activeCam = kn;
   const cam = CAMS[kn];
   activeCamEl.textContent = kn;
-  const srcLabel = cam.source === 'rcp' ? ' — assumed from RCP' : cam.source === 'sca' ? ' — SCA Rev3' : ' — Rev3 keynoted';
+  const srcLabel = cam.source === 'rcp' ? ' — assumed from RCP'
+                  : cam.source === 'sca' ? ' — SCA Rev3' : ' — Rev3 keynoted';
   activeSrcEl.textContent = srcLabel;
   document.querySelectorAll('#cam-list .item').forEach(el => el.classList.remove('active'));
   const li = document.getElementById('li-' + kn);
   if (li) { li.classList.add('active'); li.scrollIntoView({block:'nearest'}); }
   draw(kn);
-  wrap.scrollLeft = Math.max(0, cam.x*scale - wrap.clientWidth/2);
-  wrap.scrollTop  = Math.max(0, cam.y*scale - wrap.clientHeight/2);
+  requestAnimationFrame(() => {
+    wrap.scrollLeft = Math.max(0, cam.x*scale - wrap.clientWidth/2);
+    wrap.scrollTop  = Math.max(0, cam.y*scale - wrap.clientHeight/2);
+  });
 }
 
 function zoom(f) {
@@ -224,14 +256,26 @@ function zoom(f) {
   draw(activeCam);
   if (activeCam) {
     const cam = CAMS[activeCam];
-    wrap.scrollLeft = Math.max(0, cam.x*scale - wrap.clientWidth/2);
-    wrap.scrollTop  = Math.max(0, cam.y*scale - wrap.clientHeight/2);
+    requestAnimationFrame(() => {
+      wrap.scrollLeft = Math.max(0, cam.x*scale - wrap.clientWidth/2);
+      wrap.scrollTop  = Math.max(0, cam.y*scale - wrap.clientHeight/2);
+    });
   }
 }
 
-function resetView() { scale = 0.12; draw(); wrap.scrollLeft=0; wrap.scrollTop=0; }
+function resetView() {
+  scale = Math.min(0.15, (window.innerWidth - 220) / IMG_W);
+  activeCam = null;
+  activeCamEl.textContent = '—';
+  activeSrcEl.textContent = '';
+  document.querySelectorAll('#cam-list .item').forEach(el => el.classList.remove('active'));
+  draw();
+  wrap.scrollLeft = 0; wrap.scrollTop = 0;
+}
+
 function toggleList() { document.body.classList.toggle('list-hidden'); draw(activeCam); }
 
+// Drag to pan
 let dragging=false, dx=0, dy=0;
 wrap.addEventListener('mousedown', e=>{ dragging=true; dx=e.clientX+wrap.scrollLeft; dy=e.clientY+wrap.scrollTop; wrap.classList.add('grabbing'); });
 window.addEventListener('mousemove', e=>{ if(dragging){ wrap.scrollLeft=dx-e.clientX; wrap.scrollTop=dy-e.clientY; } });
