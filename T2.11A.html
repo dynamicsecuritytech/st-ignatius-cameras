@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>T2.11A — Level 1 — South | St. Ignatius Security</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #111820;
+      color: #e8edf2;
+      font-family: Arial, sans-serif;
+      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Top bar ── */
+    #topbar {
+      flex-shrink: 0;
+      background: #1a2a4a;
+      border-bottom: 2px solid #00897B;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 100;
+    }
+    #topbar .logo {
+      font-size: 14px;
+      font-weight: bold;
+      color: #00bfa5;
+      white-space: nowrap;
+      letter-spacing: 0.5px;
+    }
+    #topbar .sheet-title {
+      font-size: 13px;
+      color: #cfd8dc;
+    }
+    #topbar .spacer { flex: 1; }
+    #search-box {
+      background: #263750;
+      border: 1px solid #455a6a;
+      border-radius: 4px;
+      color: #e8edf2;
+      padding: 4px 10px;
+      font-size: 12px;
+      width: 130px;
+      outline: none;
+    }
+    #search-box:focus { border-color: #00bfa5; }
+    #zoom-controls {
+      display: flex;
+      gap: 4px;
+    }
+    #zoom-controls button {
+      background: #263750;
+      border: 1px solid #455a6a;
+      color: #e8edf2;
+      border-radius: 4px;
+      padding: 3px 9px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    #zoom-controls button:hover { background: #00897B; border-color: #00bfa5; }
+
+    /* ── Sheet nav ── */
+    #sheetbar {
+      flex-shrink: 0;
+      background: #151f2e;
+      border-bottom: 1px solid #263750;
+      padding: 4px 12px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      z-index: 100;
+    }
+    #sheetbar a {
+      color: #90a4ae;
+      text-decoration: none;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 3px;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    #sheetbar a:hover { color: #e8edf2; border-color: #455a6a; }
+    #sheetbar a.active {
+      color: #fff;
+      background: #1a2a4a;
+      border-color: #00897B;
+    }
+
+    /* ── Map viewport ── */
+    #viewport {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      cursor: grab;
+    }
+    #viewport.dragging { cursor: grabbing; }
+
+    /* ── Map canvas ── */
+    #map-container {
+      position: absolute;
+      transform-origin: 0 0;
+      user-select: none;
+    }
+    #floor-img {
+      display: block;
+      width: 7200px;
+      height: 5400px;
+    }
+
+    /* ── Camera hotspots ── */
+    .cam-hotspot {
+      position: absolute;
+      border: 2px solid transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .cam-hotspot:hover {
+      background: rgba(233, 30, 139, 0.20);
+      border-color: rgba(233, 30, 139, 0.70);
+    }
+    .cam-hotspot.highlight {
+      background: rgba(233, 30, 139, 0.35);
+      border-color: #e91e8b;
+      box-shadow: 0 0 0 3px rgba(233,30,139,0.25);
+    }
+
+    /* ── Tooltip ── */
+    #tooltip {
+      position: fixed;
+      background: #1a2a4a;
+      border: 1px solid #00897B;
+      color: #e8edf2;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+      pointer-events: none;
+      display: none;
+      z-index: 200;
+      white-space: nowrap;
+    }
+
+    /* ── Status bar ── */
+    #statusbar {
+      flex-shrink: 0;
+      background: #151f2e;
+      border-top: 1px solid #263750;
+      padding: 3px 12px;
+      font-size: 11px;
+      color: #607d8b;
+      display: flex;
+      gap: 16px;
+    }
+    #statusbar span { color: #90a4ae; }
+
+    /* ── Jump highlight animation ── */
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(233,30,139,0.7); }
+      70%  { box-shadow: 0 0 0 18px rgba(233,30,139,0); }
+      100% { box-shadow: 0 0 0 0 rgba(233,30,139,0); }
+    }
+    .cam-hotspot.jump {
+      animation: pulse 0.7s ease 3;
+      background: rgba(233, 30, 139, 0.40);
+      border-color: #e91e8b;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div id="topbar">
+  <div class="logo">Dynamic Security Technologies</div>
+  <div class="sheet-title">T2.11A &nbsp;|&nbsp; Level 1 — South &nbsp;|&nbsp; 11 cameras</div>
+  <div class="spacer"></div>
+  <input id="search-box" type="text" placeholder="Jump to keynote…" autocomplete="off">
+  <div id="zoom-controls">
+    <button onclick="zoom(1.25)">+</button>
+    <button onclick="zoom(0.8)">−</button>
+    <button onclick="resetView()">⌂</button>
+  </div>
+</div>
+
+<!-- Sheet navigation bar -->
+<div id="sheetbar">
+  <a href="T2.10B.html">T2.10B</a>
+      <a href="T2.11A.html" class="active">T2.11A</a>
+      <a href="T2.11B.html">T2.11B</a>
+      <a href="T2.12A.html">T2.12A</a>
+      <a href="T2.12B.html">T2.12B</a>
+      <a href="T2.13A.html">T2.13A</a>
+      <a href="T2.13B.html">T2.13B</a>
+      <a href="T2.14B.html">T2.14B</a>
+</div>
+
+<!-- Map viewport -->
+<div id="viewport">
+  <div id="map-container">
+    <img id="floor-img" src="T2.11A_Annotated_Dynamic_V015.webp" draggable="false" alt="T2.11A floor plan">
+    <!-- Camera hotspots injected by JS -->
+  </div>
+</div>
+
+<!-- Tooltip -->
+<div id="tooltip"></div>
+
+<!-- Status bar -->
+<div id="statusbar">
+  <div>Sheet: <span>T2.11A</span></div>
+  <div>Floor: <span>Level 1 — South</span></div>
+  <div>Cameras: <span>11</span></div>
+  <div id="zoom-pct">Zoom: <span>fit</span></div>
+  <div id="hover-info">Hover over a camera to see keynote</div>
+</div>
+
+<script>
+// ── Camera data ──
+const CAMERAS = [
+  { id: "K01-01", x: 4593, y: 1701, x0:4553, y0:1668, x1:4633, y1:1734 },
+  { id: "K01-02", x: 3894, y: 926, x0:3854, y0:893, x1:3934, y1:959 },
+  { id: "K01-03", x: 4115, y: 1624, x0:4075, y0:1591, x1:4155, y1:1657 },
+  { id: "K01-04", x: 3775, y: 2128, x0:3735, y0:2095, x1:3815, y1:2161 },
+  { id: "K01-05", x: 3905, y: 2740, x0:3865, y0:2707, x1:3945, y1:2773 },
+  { id: "K01-06", x: 4342, y: 2755, x0:4302, y0:2722, x1:4382, y1:2788 },
+  { id: "K01-07", x: 3773, y: 3469, x0:3733, y0:3436, x1:3813, y1:3502 },
+  { id: "K01-08", x: 4094, y: 3992, x0:4054, y0:3959, x1:4134, y1:4025 },
+  { id: "K01-09", x: 3814, y: 4245, x0:3774, y0:4212, x1:3854, y1:4278 },
+  { id: "K01-10", x: 4571, y: 4448, x0:4531, y0:4415, x1:4611, y1:4481 },
+  { id: "K01-11", x: 4571, y: 3803, x0:4531, y0:3770, x1:4611, y1:3836 }
+];
+
+const IMG_W = 7200;
+const IMG_H = 5400;
+
+// ── State ──
+let scale = 1;
+let panX = 0, panY = 0;
+let isDragging = false;
+let dragStartX, dragStartY, panStartX, panStartY;
+let activeId = null;
+
+const viewport    = document.getElementById('viewport');
+const container   = document.getElementById('map-container');
+const tooltip     = document.getElementById('tooltip');
+const zoomPct     = document.getElementById('zoom-pct').querySelector('span');
+const hoverInfo   = document.getElementById('hover-info');
+const searchBox   = document.getElementById('search-box');
+
+// ── Build hotspots ──
+CAMERAS.forEach(cam => {
+  const div = document.createElement('div');
+  div.className = 'cam-hotspot';
+  div.id = 'cam-' + cam.id;
+  div.style.left  = cam.x0 + 'px';
+  div.style.top   = cam.y0 + 'px';
+  div.style.width  = (cam.x1 - cam.x0) + 'px';
+  div.style.height = (cam.y1 - cam.y0) + 'px';
+
+  div.addEventListener('mouseenter', e => {
+    tooltip.textContent = cam.id;
+    tooltip.style.display = 'block';
+    hoverInfo.textContent = cam.id;
+  });
+  div.addEventListener('mousemove', e => {
+    tooltip.style.left = (e.clientX + 14) + 'px';
+    tooltip.style.top  = (e.clientY - 8) + 'px';
+  });
+  div.addEventListener('mouseleave', () => {
+    tooltip.style.display = 'none';
+    hoverInfo.textContent = 'Hover over a camera to see keynote';
+  });
+  div.addEventListener('click', () => jumpTo(cam.id));
+
+  document.getElementById('map-container').appendChild(div);
+});
+
+// ── Fit-to-viewport on load ──
+function fitView() {
+  const vw = viewport.clientWidth;
+  const vh = viewport.clientHeight;
+  scale = Math.min(vw / IMG_W, vh / IMG_H);
+  panX = (vw - IMG_W * scale) / 2;
+  panY = (vh - IMG_H * scale) / 2;
+  applyTransform();
+}
+
+function applyTransform() {
+  container.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+  zoomPct.textContent = Math.round(scale * 100) + '%';
+}
+
+function zoom(factor) {
+  const vw = viewport.clientWidth;
+  const vh = viewport.clientHeight;
+  const cx = vw / 2;
+  const cy = vh / 2;
+  // Zoom toward center
+  panX = cx - (cx - panX) * factor;
+  panY = cy - (cy - panY) * factor;
+  scale *= factor;
+  applyTransform();
+}
+
+function resetView() {
+  clearHighlight();
+  fitView();
+}
+
+// ── Jump to camera ──
+function jumpTo(id) {
+  const cam = CAMERAS.find(c => c.id === id);
+  if (!cam) return;
+
+  clearHighlight();
+
+  // Zoom to ~25% of image width visible
+  const vw = viewport.clientWidth;
+  const vh = viewport.clientHeight;
+  const targetScale = Math.min(vw / (IMG_W * 0.18), vh / (IMG_H * 0.18));
+  scale = targetScale;
+
+  // Center the camera in the viewport
+  panX = vw / 2 - cam.x * scale;
+  panY = vh / 2 - cam.y * scale;
+  applyTransform();
+
+  // Pulse highlight
+  const el = document.getElementById('cam-' + id);
+  if (el) {
+    el.classList.add('highlight', 'jump');
+    activeId = id;
+    el.addEventListener('animationend', () => {
+      el.classList.remove('jump');
+      el.classList.add('highlight');
+    }, { once: true });
+  }
+
+  hoverInfo.textContent = 'Jumped to: ' + id;
+}
+
+function clearHighlight() {
+  if (activeId) {
+    const el = document.getElementById('cam-' + activeId);
+    if (el) el.classList.remove('highlight', 'jump');
+    activeId = null;
+  }
+}
+
+// ── Pan ──
+viewport.addEventListener('mousedown', e => {
+  if (e.target.classList.contains('cam-hotspot')) return;
+  isDragging = true;
+  dragStartX = e.clientX; dragStartY = e.clientY;
+  panStartX = panX; panStartY = panY;
+  viewport.classList.add('dragging');
+});
+window.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  panX = panStartX + (e.clientX - dragStartX);
+  panY = panStartY + (e.clientY - dragStartY);
+  applyTransform();
+});
+window.addEventListener('mouseup', () => {
+  isDragging = false;
+  viewport.classList.remove('dragging');
+});
+
+// ── Scroll-to-zoom ──
+viewport.addEventListener('wheel', e => {
+  e.preventDefault();
+  const factor = e.deltaY < 0 ? 1.12 : 0.89;
+  const rect = viewport.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  panX = mx - (mx - panX) * factor;
+  panY = my - (my - panY) * factor;
+  scale *= factor;
+  applyTransform();
+}, { passive: false });
+
+// ── Touch pan/pinch ──
+let lastTouches = [];
+viewport.addEventListener('touchstart', e => {
+  lastTouches = Array.from(e.touches).map(t => ({x:t.clientX,y:t.clientY}));
+}, {passive:true});
+viewport.addEventListener('touchmove', e => {
+  e.preventDefault();
+  const touches = Array.from(e.touches).map(t => ({x:t.clientX,y:t.clientY}));
+  if (touches.length === 1 && lastTouches.length === 1) {
+    panX += touches[0].x - lastTouches[0].x;
+    panY += touches[0].y - lastTouches[0].y;
+    applyTransform();
+  } else if (touches.length === 2 && lastTouches.length === 2) {
+    const d0 = Math.hypot(lastTouches[1].x-lastTouches[0].x, lastTouches[1].y-lastTouches[0].y);
+    const d1 = Math.hypot(touches[1].x-touches[0].x, touches[1].y-touches[0].y);
+    const factor = d1 / d0;
+    const cx = (touches[0].x + touches[1].x) / 2;
+    const cy = (touches[0].y + touches[1].y) / 2;
+    panX = cx - (cx - panX) * factor;
+    panY = cy - (cy - panY) * factor;
+    scale *= factor;
+    applyTransform();
+  }
+  lastTouches = touches;
+}, {passive:false});
+
+// ── Search / jump box ──
+searchBox.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const val = searchBox.value.trim().toUpperCase();
+    const match = CAMERAS.find(c => c.id === val);
+    if (match) {
+      jumpTo(match.id);
+      searchBox.value = '';
+    } else {
+      searchBox.style.borderColor = '#e53935';
+      setTimeout(() => searchBox.style.borderColor = '', 800);
+    }
+  }
+});
+
+// ── URL hash jump on load ──
+window.addEventListener('load', () => {
+  fitView();
+  const hash = window.location.hash.replace('#','').toUpperCase();
+  if (hash) {
+    // Small delay to let image render
+    setTimeout(() => jumpTo(hash), 300);
+  }
+});
+
+// Refit on window resize
+window.addEventListener('resize', fitView);
+</script>
+</body>
+</html>
