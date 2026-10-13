@@ -17,9 +17,8 @@
   #canvas-wrap { flex: 1; overflow: hidden; position: relative; cursor: grab; }
   #canvas-wrap.grabbing { cursor: grabbing; }
   canvas { position: absolute; top: 0; left: 0; image-rendering: auto; }
-  #highlight-ring { position: absolute; border: 4px solid #e94560; border-radius: 50%; width: 90px; height: 90px; pointer-events: none; display: none; box-shadow: 0 0 16px #e94560, 0 0 32px rgba(233,69,96,0.6); animation: pulse 1.5s ease-in-out infinite; transform-origin: center; }
+  #highlight-rect { position: absolute; border: 4px solid #e94560; border-radius: 0; pointer-events: none; display: none; box-shadow: 0 0 16px #e94560, 0 0 32px rgba(233,69,96,0.6); animation: pulse 1.5s ease-in-out infinite; }
   @keyframes pulse { 0%,100% { box-shadow: 0 0 12px #e94560, 0 0 24px rgba(233,69,96,.5); } 50% { box-shadow: 0 0 20px #e94560, 0 0 40px rgba(233,69,96,.8); } }
-  #cam-label { position: absolute; pointer-events: none; display: none; color: #e94560; font-size: 13px; font-weight: bold; font-family: Arial, sans-serif; white-space: nowrap; letter-spacing: 0.5px; text-align: center; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
   #status { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.7); padding: 5px 14px; border-radius: 20px; font-size: 12px; color: #aaa; pointer-events: none; }
 </style>
 </head>
@@ -37,8 +36,7 @@
 </div>
 <div id="canvas-wrap">
   <canvas id="plan"></canvas>
-  <div id="highlight-ring"></div>
-  <div id="cam-label"></div>
+  <div id="highlight-rect"></div>
   <div id="status">Loading plan...</div>
 </div>
 
@@ -51,44 +49,76 @@ const BASE_URL = "https://dynamicsecuritytech.github.io/st-ignatius-cameras";
 // Camera coordinates on the image (pixels at 3.0x scale)
 const CAM_COORDS = {
   "K03-07": {
-    "x": 1590,
-    "y": 2781
+    "x": 619,
+    "y": 2387,
+    "bx0": 567,
+    "by0": 2353,
+    "bx1": 671,
+    "by1": 2422
   },
   "K03-23": {
-    "x": 2125,
-    "y": 3159
+    "x": 619,
+    "y": 4002,
+    "bx0": 567,
+    "by0": 3967,
+    "bx1": 671,
+    "by1": 4036
   },
   "K03-16": {
-    "x": 4757,
-    "y": 3752
+    "x": 4708,
+    "y": 4372,
+    "bx0": 4656,
+    "by0": 4337,
+    "bx1": 4760,
+    "by1": 4406
   },
   "K03-15": {
     "x": 5349,
     "y": 4372,
-    "fallback": true
+    "bx0": 5297,
+    "by0": 4337,
+    "bx1": 5401,
+    "by1": 4406
   },
   "K03-08": {
-    "x": 2412,
-    "y": 2727
+    "x": 2330,
+    "y": 1930,
+    "bx0": 2278,
+    "by0": 1895,
+    "bx1": 2383,
+    "by1": 1964
   },
   "K03-20": {
     "x": 2881,
     "y": 1930,
-    "fallback": true
+    "bx0": 2829,
+    "by0": 1895,
+    "bx1": 2933,
+    "by1": 1964
   },
   "K03-09": {
-    "x": 3749,
-    "y": 3011
+    "x": 3344,
+    "y": 1930,
+    "bx0": 3292,
+    "by0": 1895,
+    "bx1": 3396,
+    "by1": 1964
   },
   "K03-24": {
     "x": 4631,
     "y": 1693,
-    "fallback": true
+    "bx0": 4579,
+    "by0": 1659,
+    "bx1": 4683,
+    "by1": 1728
   },
   "K03-26": {
     "x": 2672,
     "y": 1930,
-    "fallback": true
+    "bx0": 2620,
+    "by0": 1895,
+    "bx1": 2724,
+    "by1": 1964
   }
 };
 
@@ -96,8 +126,7 @@ const CAM_COORDS = {
 const canvas = document.getElementById("plan");
 const ctx    = canvas.getContext("2d");
 const wrap   = document.getElementById("canvas-wrap");
-const ring     = document.getElementById("highlight-ring");
-const camLabel = document.getElementById("cam-label");
+const hlRect = document.getElementById("highlight-rect");
 const status = document.getElementById("status");
 const camInfo = document.getElementById("cam-info");
 
@@ -127,7 +156,7 @@ function fitView() {
   offX = (ww - IMG_W * scale) / 2;
   offY = (wh - IMG_H * scale) / 2;
   applyTransform();
-  hideRing();
+  hideRect();
 }
 
 function resetView() { fitView(); }
@@ -207,39 +236,35 @@ function zoomToCamera(camId) {
   offX = ww / 2 - coord.x * scale;
   offY = wh / 2 - coord.y * scale;
   applyTransform();
-  showRing(coord.x, coord.y, camId);
-  camInfo.textContent = camId + (coord.fallback ? " (approx)" : "");
+  showRect(coord.bx0, coord.by0, coord.bx1, coord.by1);
+  camInfo.textContent = camId;
   camInfo.style.color = "#4fc3f7";
 }
 
-function showRing(imgX, imgY, labelText) {
-  ring.style.display = "block";
-  camLabel.style.display = "block";
-  camLabel.textContent = labelText || "";
-  function posRing() {
-    const sx = imgX * scale + offX;
-    const sy = imgY * scale + offY;
-    ring.style.left = (sx - 45) + "px";
-    ring.style.top  = (sy - 45) + "px";
-    // Label underneath the ring, centred horizontally
-    camLabel.style.left = (sx - 45) + "px";
-    camLabel.style.top  = (sy + 49) + "px";
-    camLabel.style.width = "90px";
+function showRect(bx0, by0, bx1, by1) {
+  hlRect.style.display = "block";
+  function posRect() {
+    const sx0 = bx0 * scale + offX;
+    const sy0 = by0 * scale + offY;
+    const sx1 = bx1 * scale + offX;
+    const sy1 = by1 * scale + offY;
+    hlRect.style.left   = sx0 + "px";
+    hlRect.style.top    = sy0 + "px";
+    hlRect.style.width  = (sx1 - sx0) + "px";
+    hlRect.style.height = (sy1 - sy0) + "px";
   }
-  posRing();
-  // Keep ring + label in sync with pan/zoom
-  ring._posRing = posRing;
+  posRect();
+  hlRect._posRect = posRect;
 }
 
-function hideRing() {
-  ring.style.display = "none";
-  camLabel.style.display = "none";
-  ring._posRing = null;
+function hideRect() {
+  hlRect.style.display = "none";
+  hlRect._posRect = null;
 }
 
-// Keep ring positioned after pan/zoom
+// Keep rect in sync with pan/zoom
 const origApply = applyTransform;
-applyTransform = function() { origApply(); if (ring._posRing) ring._posRing(); };
+applyTransform = function() { origApply(); if (hlRect._posRect) hlRect._posRect(); };
 </script>
 </body>
 </html>
