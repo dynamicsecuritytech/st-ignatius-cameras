@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Camera Calibration Tool</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #1a1a2e; color: #eee; font-family: Arial, sans-serif; height: 100vh; display: flex; flex-direction: column; }
+#toolbar { background: #16213e; padding: 8px 12px; display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #0f3460; flex-shrink: 0; flex-wrap: wrap; }
+#toolbar h1 { font-size: 13px; color: #e94560; }
+#sheet-select { background: #0f3460; color: #eee; border: 1px solid #e94560; padding: 4px 8px; border-radius: 4px; font-size: 13px; }
+#cam-select { background: #0f3460; color: #eee; border: 1px solid #4fc3f7; padding: 4px 8px; border-radius: 4px; font-size: 13px; min-width: 110px; }
+#status-bar { background: #0f3460; padding: 4px 10px; border-radius: 4px; font-size: 12px; color: #4fc3f7; flex: 1; }
+#progress { font-size: 12px; color: #aaa; }
+button { background: #0f3460; border: 1px solid #e94560; color: #eee; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+button:hover { background: #e94560; }
+button.green { border-color: #4caf50; }
+button.green:hover { background: #4caf50; }
+#canvas-wrap { flex: 1; overflow: hidden; position: relative; cursor: crosshair; }
+canvas { position: absolute; top: 0; left: 0; }
+#overlay { position: absolute; top: 0; left: 0; pointer-events: none; }
+#export-box { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 100; display: none; align-items: center; justify-content: center; }
+#export-box.show { display: flex; }
+#export-inner { background: #16213e; border: 2px solid #e94560; border-radius: 8px; padding: 20px; max-width: 700px; width: 90%; }
+#export-inner h2 { color: #e94560; margin-bottom: 10px; font-size: 14px; }
+textarea { width: 100%; height: 300px; background: #0a0a1a; color: #4fc3f7; border: 1px solid #0f3460; padding: 8px; font-family: monospace; font-size: 11px; border-radius: 4px; }
+.dot { position: absolute; width: 12px; height: 12px; border-radius: 50%; transform: translate(-50%,-50%); pointer-events: none; }
+.dot.confirmed { background: #4caf50; border: 2px solid #fff; }
+.dot.pending { background: #e94560; border: 2px solid #fff; opacity: 0.6; }
+</style>
+</head>
+<body>
+<div id="toolbar">
+  <h1>📍 CALIBRATION</h1>
+  <select id="sheet-select"></select>
+  <select id="cam-select"></select>
+  <div id="status-bar">Click the camera icon on the plan to set its position</div>
+  <div id="progress"></div>
+  <button onclick="skipCam()">Skip →</button>
+  <button class="green" onclick="showExport()">Export JSON</button>
+  <button onclick="zoomBy(1.5)">＋</button>
+  <button onclick="zoomBy(0.67)">－</button>
+  <button onclick="fitView()">Fit</button>
+</div>
+<div id="canvas-wrap">
+  <canvas id="plan"></canvas>
+  <svg id="overlay" style="width:100%;height:100%;position:absolute;top:0;left:0;pointer-events:none;"></svg>
+</div>
+<div id="export-box">
+  <div id="export-inner">
+    <h2>Calibrated Coordinates JSON — paste into camera_index.json</h2>
+    <textarea id="export-text"></textarea>
+    <div style="margin-top:10px;display:flex;gap:10px;">
+      <button onclick="copyExport()">Copy</button>
+      <button onclick="document.getElementById('export-box').classList.remove('show')">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Data ─────────────────────────────────────────────────────────────────────
+// Paste camera_index.json content here
+const CAMERA_INDEX = {
+  "K00-04": {
+    "sheet": "T2.10B",
+    "x": 1662,
+    "y": 2838
+  },
+  "K00-01": {
+    "sheet": "T2.10B",
+    "x": 1141,
+    "y": 3237,
+    "fallback": true
+  },
+  "K00-10": {
+    "sheet": "T2.10B",
+    "x": 3954,
+    "y": 3455
+  },
+  "K00-14": {
+    "sheet": "T2.10B",
+    "x": 6011,
+    "y": 2856,
+    "fallback": true
+  },
+  "K00-16": {
+    "sheet": "T2.10B",
+    "x": 6011,
+    "y": 3673,
+    "fallback": true
+  },
+  "K00-13": {
+    "sheet": "T2.10B",
+    "x": 4301,
+    "y": 3993
+  },
+  "K01-02": {
+    "sheet": "T2.11A",
+    "x": 3903,
+    "y": 1530
+  },
+  "K01-01": {
+    "sheet": "T2.11A",
+    "x": 3903,
+    "y": 1172
+  },
+  "K01-08": {
+    "sheet": "T2.11A",
+    "x": 3328,
+    "y": 4100
+  },
+  "K01-09": {
+    "sheet": "T2.11A",
+    "x": 3328,
+    "y": 4100
+  },
+  "K01-03": {
+    "sheet": "T2.11A",
+    "x": 3904,
+    "y": 1041
+  },
+  "K01-17": {
+    "sheet": "T2.11B",
+    "x": 4982,
+    "y": 1076,
+    "fallback": true
+  },
+  "K01-16": {
+    "sheet": "T2.11B",
+    "x": 6055,
+    "y": 1266
+  },
+  "K01-43": {
+    "sheet": "T2.11B",
+    "x": 1432,
+    "y": 1822,
+    "fallback": true
+  },
+  "K01-24": {
+    "sheet": "T2.11B",
+    "x": 2233,
+    "y": 3029
+  },
+  "K01-21": {
+    "sheet": "T2.11B",
+    "x": 1803,
+    "y": 3378
+  },
+  "K01-12": {
+    "sheet": "T2.11B",
+    "x": 1238,
+    "y": 3669
+  },
+  "K01-42": {
+    "sheet": "T2.11B",
+    "x": 4271,
+    "y": 3321
+  },
+  "K01-30": {
+    "sheet": "T2.11B",
+    "x": 5535,
+    "y": 3144
+  },
+  "K01-31": {
+    "sheet": "T2.11B",
+    "x": 5535,
+    "y": 3144
+  },
+  "K01-15": {
+    "sheet": "T2.11B",
+    "x": 5535,
+    "y": 3144
+  },
+  "K01-32": {
+    "sheet": "T2.11B",
+    "x": 5372,
+    "y": 3674
+  },
+  "K01-33": {
+    "sheet": "T2.11B",
+    "x": 5372,
+    "y": 3674
+  },
+  "K01-34": {
+    "sheet": "T2.11B",
+    "x": 5365,
+    "y": 4053
+  },
+  "K01-35": {
+    "sheet": "T2.11B",
+    "x": 4817,
+    "y": 3552
+  },
+  "K01-36": {
+    "sheet": "T2.11B",
+    "x": 4467,
+    "y": 4294,
+    "fallback": true
+  },
+  "K02-01": {
+    "sheet": "T2.12A",
+    "x": 3328,
+    "y": 4100
+  },
+  "K02-08": {
+    "sheet": "T2.12B",
+    "x": 1495,
+    "y": 3345
+  },
+  "K02-15": {
+    "sheet": "T2.12B",
+    "x": 4760,
+    "y": 3779
+  },
+  "K02-21": {
+    "sheet": "T2.12B",
+    "x": 4763,
+    "y": 1184,
+    "fallback": true
+  },
+  "K02-11": {
+    "sheet": "T2.12B",
+    "x": 2350,
+    "y": 2801
+  },
+  "K03-06": {
+    "sheet": "T2.13A",
+    "x": 3323,
+    "y": 4140
+  },
+  "K03-01": {
+    "sheet": "T2.13A",
+    "x": 4769,
+    "y": 1325,
+    "fallback": true
+  },
+  "K03-07": {
+    "sheet": "T2.13B",
+    "x": 1590,
+    "y": 2781
+  },
+  "K03-23": {
+    "sheet": "T2.13B",
+    "x": 2125,
+    "y": 3159
+  },
+  "K03-16": {
+    "sheet": "T2.13B",
+    "x": 4757,
+    "y": 3752
+  },
+  "K03-15": {
+    "sheet": "T2.13B",
+    "x": 5349,
+    "y": 4372,
+    "fallback": true
+  },
+  "K03-08": {
+    "sheet": "T2.13B",
+    "x": 2412,
+    "y": 2727
+  },
+  "K03-20": {
+    "sheet": "T2.13B",
+    "x": 2881,
+    "y": 1930,
+    "fallback": true
+  },
+  "K03-09": {
+    "sheet": "T2.13B",
+    "x": 3749,
+    "y": 3011
+  },
+  "K03-24": {
+    "sheet": "T2.13B",
+    "x": 4631,
+    "y": 1693,
+    "fallback": true
+  },
+  "K03-26": {
+    "sheet": "T2.13B",
+    "x": 2672,
+    "y": 1930,
+    "fallback": true
+  },
+  "KRF-02": {
+    "sheet": "T2.14B",
+    "x": 1650,
+    "y": 3303
+  },
+  "KRF-01": {
+    "sheet": "T2.14B",
+    "x": 1650,
+    "y": 3303
+  },
+  "K00-06": {
+    "sheet": "T3.10B",
+    "x": 1654,
+    "y": 2813
+  },
+  "K00-05": {
+    "sheet": "T3.10B",
+    "x": 1654,
+    "y": 2813
+  },
+  "K00-03": {
+    "sheet": "T3.10B",
+    "x": 1654,
+    "y": 2813
+  },
+  "K00-02": {
+    "sheet": "T3.10B",
+    "x": 1670,
+    "y": 3495
+  },
+  "K00-07": {
+    "sheet": "T3.10B",
+    "x": 1947,
+    "y": 2114
+  },
+  "K00-08": {
+    "sheet": "T3.10B",
+    "x": 3564,
+    "y": 2115
+  },
+  "K00-19": {
+    "sheet": "T3.10B",
+    "x": 5315,
+    "y": 2127
+  },
+  "K00-18": {
+    "sheet": "T3.10B",
+    "x": 5564,
+    "y": 3514
+  },
+  "K00-17": {
+    "sheet": "T3.10B",
+    "x": 5564,
+    "y": 3514
+  },
+  "K00-11": {
+    "sheet": "T3.10B",
+    "x": 3578,
+    "y": 3423
+  },
+  "K00-09": {
+    "sheet": "T3.10B",
+    "x": 3578,
+    "y": 3423
+  },
+  "K00-12": {
+    "sheet": "T3.10B",
+    "x": 4314,
+    "y": 3748
+  },
+  "K00-15": {
+    "sheet": "T3.10B",
+    "x": 4157,
+    "y": 3537
+  },
+  "K01-07": {
+    "sheet": "T3.11A",
+    "x": 3508,
+    "y": 4385,
+    "fallback": true
+  },
+  "K01-05": {
+    "sheet": "T3.11A",
+    "x": 4244,
+    "y": 2610
+  },
+  "K01-06": {
+    "sheet": "T3.11A",
+    "x": 4244,
+    "y": 2610
+  },
+  "K01-04": {
+    "sheet": "T3.11A",
+    "x": 3848,
+    "y": 2003
+  },
+  "K01-18": {
+    "sheet": "T3.11B",
+    "x": 1015,
+    "y": 2168
+  },
+  "K01-19": {
+    "sheet": "T3.11B",
+    "x": 977,
+    "y": 3266
+  },
+  "K01-22": {
+    "sheet": "T3.11B",
+    "x": 1690,
+    "y": 3271
+  },
+  "K01-23": {
+    "sheet": "T3.11B",
+    "x": 1618,
+    "y": 4355,
+    "fallback": true
+  },
+  "K01-25": {
+    "sheet": "T3.11B",
+    "x": 2500,
+    "y": 3221
+  },
+  "K01-40": {
+    "sheet": "T3.11B",
+    "x": 2500,
+    "y": 3221
+  },
+  "K01-39": {
+    "sheet": "T3.11B",
+    "x": 2840,
+    "y": 3586
+  },
+  "K01-41": {
+    "sheet": "T3.11B",
+    "x": 3400,
+    "y": 4355,
+    "fallback": true
+  },
+  "K01-38": {
+    "sheet": "T3.11B",
+    "x": 3689,
+    "y": 4355,
+    "fallback": true
+  },
+  "K01-14": {
+    "sheet": "T3.11B",
+    "x": 6060,
+    "y": 4260,
+    "fallback": true
+  },
+  "K01-29": {
+    "sheet": "T3.11B",
+    "x": 6060,
+    "y": 2638,
+    "fallback": true
+  },
+  "K01-26": {
+    "sheet": "T3.11B",
+    "x": 2244,
+    "y": 1521,
+    "fallback": true
+  },
+  "K01-20": {
+    "sheet": "T3.11B",
+    "x": 1690,
+    "y": 3271
+  },
+  "K01-37": {
+    "sheet": "T3.11B",
+    "x": 6060,
+    "y": 3699,
+    "fallback": true
+  },
+  "K01-10": {
+    "sheet": "T3.11B",
+    "x": 1324,
+    "y": 4102
+  },
+  "K01-13": {
+    "sheet": "T3.11B",
+    "x": 4429,
+    "y": 4355,
+    "fallback": true
+  },
+  "K01-11": {
+    "sheet": "T3.11B",
+    "x": 1251,
+    "y": 3454
+  },
+  "K01-27": {
+    "sheet": "T3.11B",
+    "x": 3321,
+    "y": 3052
+  },
+  "K01-28": {
+    "sheet": "T3.11B",
+    "x": 3538,
+    "y": 2050
+  },
+  "K02-05": {
+    "sheet": "T3.12A",
+    "x": 5291,
+    "y": 1731,
+    "fallback": true
+  },
+  "K02-03": {
+    "sheet": "T3.12A",
+    "x": 5291,
+    "y": 2270,
+    "fallback": true
+  },
+  "K02-04": {
+    "sheet": "T3.12A",
+    "x": 5291,
+    "y": 2399,
+    "fallback": true
+  },
+  "K02-02": {
+    "sheet": "T3.12A",
+    "x": 5291,
+    "y": 2870,
+    "fallback": true
+  },
+  "K02-20": {
+    "sheet": "T3.12B",
+    "x": 6248,
+    "y": 1510,
+    "fallback": true
+  },
+  "K02-06": {
+    "sheet": "T3.12B",
+    "x": 1000,
+    "y": 2152
+  },
+  "K02-10": {
+    "sheet": "T3.12B",
+    "x": 1950,
+    "y": 2758
+  },
+  "K02-09": {
+    "sheet": "T3.12B",
+    "x": 1950,
+    "y": 2758
+  },
+  "K02-07": {
+    "sheet": "T3.12B",
+    "x": 1950,
+    "y": 2758
+  },
+  "K02-12": {
+    "sheet": "T3.12B",
+    "x": 2171,
+    "y": 4482,
+    "fallback": true
+  },
+  "K02-13": {
+    "sheet": "T3.12B",
+    "x": 3542,
+    "y": 3741
+  },
+  "K02-18": {
+    "sheet": "T3.12B",
+    "x": 6248,
+    "y": 3882,
+    "fallback": true
+  },
+  "K02-16": {
+    "sheet": "T3.12B",
+    "x": 6248,
+    "y": 3751,
+    "fallback": true
+  },
+  "K02-17": {
+    "sheet": "T3.12B",
+    "x": 6248,
+    "y": 3641,
+    "fallback": true
+  },
+  "K02-14": {
+    "sheet": "T3.12B",
+    "x": 6248,
+    "y": 3202,
+    "fallback": true
+  },
+  "K02-19": {
+    "sheet": "T3.12B",
+    "x": 5361,
+    "y": 2791
+  },
+  "K03-05": {
+    "sheet": "T3.13A",
+    "x": 5291,
+    "y": 2870,
+    "fallback": true
+  },
+  "K03-02": {
+    "sheet": "T3.13A",
+    "x": 5291,
+    "y": 1731,
+    "fallback": true
+  },
+  "K03-03": {
+    "sheet": "T3.13A",
+    "x": 5291,
+    "y": 2270,
+    "fallback": true
+  },
+  "K03-04": {
+    "sheet": "T3.13A",
+    "x": 5291,
+    "y": 2399,
+    "fallback": true
+  },
+  "K03-11": {
+    "sheet": "T3.13B",
+    "x": 6249,
+    "y": 1823,
+    "fallback": true
+  },
+  "K03-22": {
+    "sheet": "T3.13B",
+    "x": 1394,
+    "y": 3446
+  },
+  "K03-18": {
+    "sheet": "T3.13B",
+    "x": 3677,
+    "y": 3732
+  },
+  "K03-14": {
+    "sheet": "T3.13B",
+    "x": 6247,
+    "y": 3890,
+    "fallback": true
+  },
+  "K03-13": {
+    "sheet": "T3.13B",
+    "x": 5389,
+    "y": 3697
+  },
+  "K03-25": {
+    "sheet": "T3.13B",
+    "x": 5389,
+    "y": 3697
+  },
+  "K03-12": {
+    "sheet": "T3.13B",
+    "x": 5097,
+    "y": 2721
+  },
+  "K03-10": {
+    "sheet": "T3.13B",
+    "x": 5097,
+    "y": 2721
+  },
+  "K03-21": {
+    "sheet": "T3.13B",
+    "x": 1873,
+    "y": 3452
+  },
+  "K03-19": {
+    "sheet": "T3.13B",
+    "x": 2605,
+    "y": 3733
+  },
+  "K03-17": {
+    "sheet": "T3.13B",
+    "x": 4340,
+    "y": 4485,
+    "fallback": true
+  }
+};
+
+const BASE = "https://dynamicsecuritytech.github.io/st-ignatius-cameras/";
+
+// calibrated[cam_id] = {x, y}  (pixel coords at 3× scale)
+const calibrated = {};
+
+// Group cameras by sheet
+const bySheet = {};
+for (const [cam, info] of Object.entries(CAMERA_INDEX)) {
+  if (!bySheet[info.sheet]) bySheet[info.sheet] = [];
+  bySheet[info.sheet].push(cam);
+}
+for (const s of Object.keys(bySheet)) bySheet[s].sort();
+
+// ── UI setup ─────────────────────────────────────────────────────────────────
+const sheetSelect = document.getElementById('sheet-select');
+const camSelect   = document.getElementById('cam-select');
+const statusBar   = document.getElementById('status-bar');
+const progress    = document.getElementById('progress');
+
+for (const sheet of Object.keys(bySheet).sort()) {
+  const o = document.createElement('option');
+  o.value = o.textContent = sheet;
+  sheetSelect.appendChild(o);
+}
+
+sheetSelect.addEventListener('change', () => loadSheet(sheetSelect.value));
+camSelect.addEventListener('change', () => highlightCurrent());
+
+function populateCams(sheet) {
+  camSelect.innerHTML = '';
+  for (const cam of bySheet[sheet] || []) {
+    const o = document.createElement('option');
+    o.value = o.textContent = cam;
+    if (calibrated[cam]) o.style.color = '#4caf50';
+    camSelect.appendChild(o);
+  }
+  updateProgress();
+}
+
+// ── Canvas / pan-zoom ─────────────────────────────────────────────────────────
+const canvas = document.getElementById('plan');
+const ctx    = canvas.getContext('2d');
+const wrap   = document.getElementById('canvas-wrap');
+const svg    = document.getElementById('overlay');
+
+let scale = 1, offX = 0, offY = 0;
+let dragging = false, moved = false, lastX = 0, lastY = 0;
+let imgW = 0, imgH = 0;
+let currentSheet = null;
+let img = new Image();
+
+img.onload = () => {
+  imgW = img.naturalWidth; imgH = img.naturalHeight;
+  canvas.width = imgW; canvas.height = imgH;
+  ctx.drawImage(img, 0, 0);
+  fitView();
+  drawDots();
+};
+
+function loadSheet(sheet) {
+  currentSheet = sheet;
+  img.src = BASE + sheet + '.png';
+  populateCams(sheet);
+  highlightCurrent();
+}
+
+function fitView() {
+  const ww = wrap.clientWidth, wh = wrap.clientHeight;
+  scale = Math.min(ww / imgW, wh / imgH) * 0.95;
+  offX = (ww - imgW * scale) / 2;
+  offY = (wh - imgH * scale) / 2;
+  applyTransform();
+}
+
+function applyTransform() {
+  canvas.style.transform = `translate(${offX}px,${offY}px) scale(${scale})`;
+  canvas.style.transformOrigin = '0 0';
+  drawDots();
+}
+
+function zoomBy(f, cx, cy) {
+  if (cx === undefined) { cx = wrap.clientWidth/2; cy = wrap.clientHeight/2; }
+  const ns = Math.min(Math.max(scale*f, 0.05), 20);
+  offX = cx - (cx-offX)*(ns/scale);
+  offY = cy - (cy-offY)*(ns/scale);
+  scale = ns;
+  applyTransform();
+}
+
+wrap.addEventListener('wheel', e => {
+  e.preventDefault();
+  const r = wrap.getBoundingClientRect();
+  zoomBy(e.deltaY<0?1.15:0.87, e.clientX-r.left, e.clientY-r.top);
+}, {passive:false});
+
+wrap.addEventListener('mousedown', e => {
+  dragging = true; moved = false;
+  lastX = e.clientX; lastY = e.clientY;
+});
+window.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  const dx = e.clientX-lastX, dy = e.clientY-lastY;
+  if (Math.abs(dx)+Math.abs(dy) > 3) moved = true;
+  offX += dx; offY += dy;
+  lastX = e.clientX; lastY = e.clientY;
+  applyTransform();
+});
+window.addEventListener('mouseup', e => {
+  if (dragging && !moved) handleClick(e);
+  dragging = false;
+});
+
+function handleClick(e) {
+  const r = wrap.getBoundingClientRect();
+  const imgX = Math.round((e.clientX - r.left - offX) / scale);
+  const imgY = Math.round((e.clientY - r.top  - offY) / scale);
+  const cam = camSelect.value;
+  if (!cam) return;
+  calibrated[cam] = {x: imgX, y: imgY};
+  // colour the option green
+  for (const o of camSelect.options) {
+    if (o.value === cam) o.style.color = '#4caf50';
+  }
+  statusBar.textContent = `✓ ${cam} → (${imgX}, ${imgY})`;
+  updateProgress();
+  drawDots();
+  // Auto-advance to next cam
+  const idx = camSelect.selectedIndex;
+  if (idx < camSelect.options.length-1) {
+    camSelect.selectedIndex = idx+1;
+    highlightCurrent();
+  }
+}
+
+function skipCam() {
+  const idx = camSelect.selectedIndex;
+  if (idx < camSelect.options.length-1) {
+    camSelect.selectedIndex = idx+1;
+    highlightCurrent();
+  }
+}
+
+function highlightCurrent() {
+  const cam = camSelect.value;
+  if (!cam) return;
+  const info = CAMERA_INDEX[cam];
+  statusBar.textContent = calibrated[cam]
+    ? `${cam} already set at (${calibrated[cam].x},${calibrated[cam].y}) — click to re-set`
+    : `Click the camera icon for ${cam}`;
+  // Show existing coord as hint
+  drawDots();
+}
+
+// ── Dot overlay ───────────────────────────────────────────────────────────────
+function drawDots() {
+  if (!currentSheet) return;
+  svg.innerHTML = '';
+  const cams = bySheet[currentSheet] || [];
+  for (const cam of cams) {
+    const coord = calibrated[cam] || CAMERA_INDEX[cam];
+    if (!coord) continue;
+    const sx = coord.x * scale + offX;
+    const sy = coord.y * scale + offY;
+    const isCalibrated = !!calibrated[cam];
+    const isCurrent = cam === camSelect.value;
+
+    const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('cx', sx);
+    circle.setAttribute('cy', sy);
+    circle.setAttribute('r', isCurrent ? 18 : 8);
+    circle.setAttribute('fill', isCalibrated ? 'rgba(76,175,80,0.4)' : 'rgba(233,69,96,0.3)');
+    circle.setAttribute('stroke', isCalibrated ? '#4caf50' : (isCurrent ? '#e94560' : '#ff9800'));
+    circle.setAttribute('stroke-width', isCurrent ? 3 : 1.5);
+    svg.appendChild(circle);
+
+    if (isCurrent || isCalibrated) {
+      const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+      text.setAttribute('x', sx);
+      text.setAttribute('y', sy - 12);
+      text.setAttribute('text-anchor','middle');
+      text.setAttribute('fill', isCalibrated ? '#4caf50' : '#e94560');
+      text.setAttribute('font-size', '11');
+      text.setAttribute('font-weight', 'bold');
+      text.setAttribute('font-family', 'Arial');
+      text.textContent = cam;
+      svg.appendChild(text);
+    }
+  }
+}
+
+function updateProgress() {
+  const sheet = currentSheet;
+  if (!sheet) return;
+  const cams = bySheet[sheet] || [];
+  const done = cams.filter(c => calibrated[c]).length;
+  const total = Object.keys(CAMERA_INDEX).length;
+  const totalDone = Object.keys(calibrated).length;
+  progress.textContent = `Sheet: ${done}/${cams.length} | Total: ${totalDone}/${total}`;
+}
+
+// ── Export ────────────────────────────────────────────────────────────────────
+function showExport() {
+  // Merge calibrated into original index
+  const merged = JSON.parse(JSON.stringify(CAMERA_INDEX));
+  for (const [cam, coord] of Object.entries(calibrated)) {
+    merged[cam].x = coord.x;
+    merged[cam].y = coord.y;
+    delete merged[cam].fallback;
+  }
+  document.getElementById('export-text').value = JSON.stringify(merged, null, 2);
+  document.getElementById('export-box').classList.add('show');
+}
+
+function copyExport() {
+  const ta = document.getElementById('export-text');
+  ta.select();
+  document.execCommand('copy');
+  statusBar.textContent = '✓ Copied to clipboard!';
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadSheet(sheetSelect.options[0]?.value);
+</script>
+</body>
+</html>
