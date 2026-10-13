@@ -19,6 +19,7 @@
   canvas { position: absolute; top: 0; left: 0; image-rendering: auto; }
   #highlight-ring { position: absolute; border: 4px solid #e94560; border-radius: 50%; width: 80px; height: 80px; pointer-events: none; display: none; box-shadow: 0 0 16px #e94560, 0 0 32px rgba(233,69,96,0.6); animation: pulse 1.5s ease-in-out infinite; transform-origin: center; }
   @keyframes pulse { 0%,100% { box-shadow: 0 0 12px #e94560, 0 0 24px rgba(233,69,96,.5); } 50% { box-shadow: 0 0 20px #e94560, 0 0 40px rgba(233,69,96,.8); } }
+  #cam-label { position: absolute; pointer-events: none; display: none; background: rgba(233,69,96,0.92); color: #fff; font-size: 15px; font-weight: bold; font-family: Arial, sans-serif; padding: 3px 10px; border-radius: 4px; white-space: nowrap; letter-spacing: 0.5px; box-shadow: 0 2px 8px rgba(0,0,0,0.6); }
   #status { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.7); padding: 5px 14px; border-radius: 20px; font-size: 12px; color: #aaa; pointer-events: none; }
 </style>
 </head>
@@ -37,6 +38,7 @@
 <div id="canvas-wrap">
   <canvas id="plan"></canvas>
   <div id="highlight-ring"></div>
+  <div id="cam-label"></div>
   <div id="status">Loading plan...</div>
 </div>
 
@@ -53,8 +55,8 @@ const CAM_COORDS = {
     "y": 3303
   },
   "KRF-01": {
-    "x": 1608,
-    "y": 3419
+    "x": 1650,
+    "y": 3303
   }
 };
 
@@ -62,7 +64,8 @@ const CAM_COORDS = {
 const canvas = document.getElementById("plan");
 const ctx    = canvas.getContext("2d");
 const wrap   = document.getElementById("canvas-wrap");
-const ring   = document.getElementById("highlight-ring");
+const ring     = document.getElementById("highlight-ring");
+const camLabel = document.getElementById("cam-label");
 const status = document.getElementById("status");
 const camInfo = document.getElementById("cam-info");
 
@@ -166,32 +169,41 @@ function zoomToCamera(camId) {
   const coord = CAM_COORDS[camId];
   if (!coord) return;
   const ww = wrap.clientWidth, wh = wrap.clientHeight;
-  // Zoom to show camera at ~3× scale, centered
-  const targetScale = Math.min(ww / 400, wh / 400, 4);  // show ~400px of image (camera + surroundings)
+  // Zoom to show camera with context — show ~1200px of image width around the camera
+  const targetScale = Math.min(ww / 1200, wh / 1200, 2.5);  // show ~1200px of image (camera + room context)
   scale = targetScale;
   offX = ww / 2 - coord.x * scale;
   offY = wh / 2 - coord.y * scale;
   applyTransform();
-  showRing(coord.x, coord.y);
+  showRing(coord.x, coord.y, camId);
   camInfo.textContent = camId + (coord.fallback ? " (approx)" : "");
   camInfo.style.color = "#4fc3f7";
 }
 
-function showRing(imgX, imgY) {
+function showRing(imgX, imgY, labelText) {
   ring.style.display = "block";
+  camLabel.style.display = "block";
+  camLabel.textContent = labelText || "";
   function posRing() {
-    const wrapRect = wrap.getBoundingClientRect();
     const sx = imgX * scale + offX;
     const sy = imgY * scale + offY;
     ring.style.left = (sx - 40) + "px";
     ring.style.top  = (sy - 40) + "px";
+    // Label sits just below the ring, centred horizontally on it
+    const lw = camLabel.offsetWidth;
+    camLabel.style.left = (sx - lw / 2) + "px";
+    camLabel.style.top  = (sy + 44) + "px";
   }
   posRing();
-  // Keep ring in sync with pan/zoom
+  // Keep ring + label in sync with pan/zoom
   ring._posRing = posRing;
 }
 
-function hideRing() { ring.style.display = "none"; ring._posRing = null; }
+function hideRing() {
+  ring.style.display = "none";
+  camLabel.style.display = "none";
+  ring._posRing = null;
+}
 
 // Keep ring positioned after pan/zoom
 const origApply = applyTransform;
