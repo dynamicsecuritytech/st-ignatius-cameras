@@ -175,7 +175,7 @@ function zoomToCamera(camId) {
   if (!coord) return;
   const ww = wrap.clientWidth, wh = wrap.clientHeight;
   // Zoom to show camera with context — show ~1200px of image width around the camera
-  const targetScale = Math.min(ww / 1200, wh / 1200, 2.5);  // show ~1200px of image (camera + room context)
+  const targetScale = Math.min(ww / 1600, wh / 1600, 2.5);  // show ~1600px of image (camera + room context)
   scale = targetScale;
   offX = ww / 2 - coord.x * scale;
   offY = wh / 2 - coord.y * scale;
