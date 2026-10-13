@@ -16,7 +16,7 @@
   #zoom-controls button:hover { background: #e94560; }
   #canvas-wrap { flex: 1; overflow: hidden; position: relative; cursor: grab; }
   #canvas-wrap.grabbing { cursor: grabbing; }
-  canvas { position: absolute; top: 0; left: 0; image-rendering: pixelated; }
+  canvas { position: absolute; top: 0; left: 0; image-rendering: auto; }
   #highlight-ring { position: absolute; border: 3px solid #e94560; border-radius: 50%; width: 36px; height: 36px; pointer-events: none; display: none; box-shadow: 0 0 12px #e94560, 0 0 24px rgba(233,69,96,0.5); animation: pulse 1.5s ease-in-out infinite; transform-origin: center; }
   @keyframes pulse { 0%,100% { box-shadow: 0 0 12px #e94560, 0 0 24px rgba(233,69,96,.5); } 50% { box-shadow: 0 0 20px #e94560, 0 0 40px rgba(233,69,96,.8); } }
   #status { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.7); padding: 5px 14px; border-radius: 20px; font-size: 12px; color: #aaa; pointer-events: none; }
@@ -42,63 +42,63 @@
 
 <script>
 const SHEET = "T3.12B";
-const IMG_W = 1192;
-const IMG_H = 842;
+const IMG_W = 3576;
+const IMG_H = 2526;
 const BASE_URL = "https://dynamicsecuritytech.github.io/st-ignatius-cameras";
 
-// Camera coordinates on the image (pixels at 0.5x scale)
+// Camera coordinates on the image (pixels at 1.5x scale)
 const CAM_COORDS = {
   "K02-20": {
-    "x": 1127,
-    "y": 240
+    "x": 3381,
+    "y": 721
   },
   "K02-06": {
-    "x": 167,
-    "y": 359
+    "x": 500,
+    "y": 1076
   },
   "K02-10": {
-    "x": 412,
-    "y": 426
+    "x": 1237,
+    "y": 1279
   },
   "K02-09": {
-    "x": 325,
-    "y": 460
+    "x": 975,
+    "y": 1379
   },
   "K02-07": {
-    "x": 165,
-    "y": 543
+    "x": 496,
+    "y": 1628
   },
   "K02-12": {
-    "x": 417,
-    "y": 594
+    "x": 1250,
+    "y": 1782
   },
   "K02-13": {
-    "x": 655,
-    "y": 727
+    "x": 1966,
+    "y": 2180
   },
   "K02-18": {
-    "x": 1041,
-    "y": 647,
+    "x": 3124,
+    "y": 1941,
     "fallback": true
   },
   "K02-16": {
-    "x": 1041,
-    "y": 625,
+    "x": 3124,
+    "y": 1875,
     "fallback": true
   },
   "K02-17": {
-    "x": 1041,
-    "y": 607,
+    "x": 3124,
+    "y": 1821,
     "fallback": true
   },
   "K02-14": {
-    "x": 1041,
-    "y": 534,
+    "x": 3124,
+    "y": 1601,
     "fallback": true
   },
   "K02-19": {
-    "x": 1041,
-    "y": 425,
+    "x": 3124,
+    "y": 1275,
     "fallback": true
   }
 };
@@ -212,7 +212,7 @@ function zoomToCamera(camId) {
   if (!coord) return;
   const ww = wrap.clientWidth, wh = wrap.clientHeight;
   // Zoom to show camera at ~3× scale, centered
-  const targetScale = Math.min(ww / 200, wh / 200, 6);  // zoom to ~200px window around icon
+  const targetScale = Math.min(ww / 150, wh / 150, 8);  // tight zoom: ~150px viewport window around icon
   scale = targetScale;
   offX = ww / 2 - coord.x * scale;
   offY = wh / 2 - coord.y * scale;
