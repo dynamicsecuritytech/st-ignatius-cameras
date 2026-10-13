@@ -17,7 +17,7 @@
   #canvas-wrap { flex: 1; overflow: hidden; position: relative; cursor: grab; }
   #canvas-wrap.grabbing { cursor: grabbing; }
   canvas { position: absolute; top: 0; left: 0; image-rendering: auto; }
-  #highlight-ring { position: absolute; border: 3px solid #e94560; border-radius: 50%; width: 36px; height: 36px; pointer-events: none; display: none; box-shadow: 0 0 12px #e94560, 0 0 24px rgba(233,69,96,0.5); animation: pulse 1.5s ease-in-out infinite; transform-origin: center; }
+  #highlight-ring { position: absolute; border: 4px solid #e94560; border-radius: 50%; width: 80px; height: 80px; pointer-events: none; display: none; box-shadow: 0 0 16px #e94560, 0 0 32px rgba(233,69,96,0.6); animation: pulse 1.5s ease-in-out infinite; transform-origin: center; }
   @keyframes pulse { 0%,100% { box-shadow: 0 0 12px #e94560, 0 0 24px rgba(233,69,96,.5); } 50% { box-shadow: 0 0 20px #e94560, 0 0 40px rgba(233,69,96,.8); } }
   #status { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.7); padding: 5px 14px; border-radius: 20px; font-size: 12px; color: #aaa; pointer-events: none; }
 </style>
@@ -42,50 +42,49 @@
 
 <script>
 const SHEET = "T2.13B";
-const IMG_W = 3576;
-const IMG_H = 2526;
+const IMG_W = 7152;
+const IMG_H = 5052;
 const BASE_URL = "https://dynamicsecuritytech.github.io/st-ignatius-cameras";
 
-// Camera coordinates on the image (pixels at 1.5x scale)
+// Camera coordinates on the image (pixels at 3.0x scale)
 const CAM_COORDS = {
   "K03-07": {
-    "x": 676,
-    "y": 1355
+    "x": 1352,
+    "y": 2711
   },
   "K03-23": {
-    "x": 748,
-    "y": 1742
+    "x": 1497,
+    "y": 3485
   },
   "K03-16": {
-    "x": 2581,
-    "y": 2156
+    "x": 4078,
+    "y": 4291
   },
   "K03-15": {
-    "x": 2995,
-    "y": 2156
+    "x": 5184,
+    "y": 3876
   },
   "K03-08": {
-    "x": 2202,
-    "y": 1018
+    "x": 4404,
+    "y": 2037
   },
   "K03-20": {
-    "x": 1441,
-    "y": 965,
+    "x": 2881,
+    "y": 1930,
     "fallback": true
   },
   "K03-09": {
-    "x": 1874,
-    "y": 1506
+    "x": 3596,
+    "y": 2146
   },
   "K03-24": {
-    "x": 2316,
-    "y": 847,
+    "x": 4631,
+    "y": 1693,
     "fallback": true
   },
   "K03-26": {
-    "x": 1336,
-    "y": 965,
-    "fallback": true
+    "x": 2891,
+    "y": 2146
   }
 };
 
@@ -198,7 +197,7 @@ function zoomToCamera(camId) {
   if (!coord) return;
   const ww = wrap.clientWidth, wh = wrap.clientHeight;
   // Zoom to show camera at ~3× scale, centered
-  const targetScale = Math.min(ww / 150, wh / 150, 8);  // tight zoom: ~150px viewport window around icon
+  const targetScale = Math.min(ww / 400, wh / 400, 4);  // show ~400px of image (camera + surroundings)
   scale = targetScale;
   offX = ww / 2 - coord.x * scale;
   offY = wh / 2 - coord.y * scale;
@@ -214,8 +213,8 @@ function showRing(imgX, imgY) {
     const wrapRect = wrap.getBoundingClientRect();
     const sx = imgX * scale + offX;
     const sy = imgY * scale + offY;
-    ring.style.left = (sx - 18) + "px";
-    ring.style.top  = (sy - 18) + "px";
+    ring.style.left = (sx - 40) + "px";
+    ring.style.top  = (sy - 40) + "px";
   }
   posRing();
   // Keep ring in sync with pan/zoom

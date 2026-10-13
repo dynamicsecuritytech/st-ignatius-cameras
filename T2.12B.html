@@ -17,7 +17,7 @@
   #canvas-wrap { flex: 1; overflow: hidden; position: relative; cursor: grab; }
   #canvas-wrap.grabbing { cursor: grabbing; }
   canvas { position: absolute; top: 0; left: 0; image-rendering: auto; }
-  #highlight-ring { position: absolute; border: 3px solid #e94560; border-radius: 50%; width: 36px; height: 36px; pointer-events: none; display: none; box-shadow: 0 0 12px #e94560, 0 0 24px rgba(233,69,96,0.5); animation: pulse 1.5s ease-in-out infinite; transform-origin: center; }
+  #highlight-ring { position: absolute; border: 4px solid #e94560; border-radius: 50%; width: 80px; height: 80px; pointer-events: none; display: none; box-shadow: 0 0 16px #e94560, 0 0 32px rgba(233,69,96,0.6); animation: pulse 1.5s ease-in-out infinite; transform-origin: center; }
   @keyframes pulse { 0%,100% { box-shadow: 0 0 12px #e94560, 0 0 24px rgba(233,69,96,.5); } 50% { box-shadow: 0 0 20px #e94560, 0 0 40px rgba(233,69,96,.8); } }
   #status { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.7); padding: 5px 14px; border-radius: 20px; font-size: 12px; color: #aaa; pointer-events: none; }
 </style>
@@ -42,29 +42,28 @@
 
 <script>
 const SHEET = "T2.12B";
-const IMG_W = 3576;
-const IMG_H = 2526;
+const IMG_W = 7152;
+const IMG_H = 5052;
 const BASE_URL = "https://dynamicsecuritytech.github.io/st-ignatius-cameras";
 
-// Camera coordinates on the image (pixels at 1.5x scale)
+// Camera coordinates on the image (pixels at 3.0x scale)
 const CAM_COORDS = {
   "K02-08": {
-    "x": 748,
-    "y": 1673
+    "x": 1495,
+    "y": 3345
   },
   "K02-15": {
-    "x": 2361,
-    "y": 2256,
+    "x": 4723,
+    "y": 4512,
     "fallback": true
   },
   "K02-21": {
-    "x": 2381,
-    "y": 592,
-    "fallback": true
+    "x": 4423,
+    "y": 1370
   },
   "K02-11": {
-    "x": 1205,
-    "y": 1445
+    "x": 2410,
+    "y": 2889
   }
 };
 
@@ -177,7 +176,7 @@ function zoomToCamera(camId) {
   if (!coord) return;
   const ww = wrap.clientWidth, wh = wrap.clientHeight;
   // Zoom to show camera at ~3× scale, centered
-  const targetScale = Math.min(ww / 150, wh / 150, 8);  // tight zoom: ~150px viewport window around icon
+  const targetScale = Math.min(ww / 400, wh / 400, 4);  // show ~400px of image (camera + surroundings)
   scale = targetScale;
   offX = ww / 2 - coord.x * scale;
   offY = wh / 2 - coord.y * scale;
@@ -193,8 +192,8 @@ function showRing(imgX, imgY) {
     const wrapRect = wrap.getBoundingClientRect();
     const sx = imgX * scale + offX;
     const sy = imgY * scale + offY;
-    ring.style.left = (sx - 18) + "px";
-    ring.style.top  = (sy - 18) + "px";
+    ring.style.left = (sx - 40) + "px";
+    ring.style.top  = (sy - 40) + "px";
   }
   posRing();
   // Keep ring in sync with pan/zoom
