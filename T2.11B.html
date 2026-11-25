@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>T2.11B — St. Ignatius Camera Plan</title>
+<title>T2.11B — St. Ignatius Camera Plan (November 2026)</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: #1a1a2e; color: #eee; font-family: Arial, sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
@@ -24,7 +24,7 @@
 </head>
 <body>
 <div id="toolbar">
-  <h1>ST. IGNATIUS — T2.11B</h1>
+  <h1>ST. IGNATIUS — T2.10B</h1>
   <div id="cam-info">No camera selected</div>
   <span>Scroll/pinch to zoom · Drag to pan</span>
   <div id="zoom-controls">
@@ -49,124 +49,124 @@ const BASE_URL = "https://dynamicsecuritytech.github.io/st-ignatius-cameras";
 // Camera coordinates on the image (pixels at 3.0x scale)
 const CAM_COORDS = {
   "K01-17": {
-    "x": 4982,
-    "y": 1076,
-    "bx0": 4894,
-    "by0": 1005,
-    "bx1": 5070,
-    "by1": 1147
+    "x": 4981,
+    "y": 1086,
+    "bx0": 4933,
+    "by0": 1061,
+    "bx1": 5029,
+    "by1": 1111
   },
   "K01-16": {
-    "x": 6120,
-    "y": 1562,
-    "bx0": 6032,
-    "by0": 1492,
-    "bx1": 6208,
-    "by1": 1633
+    "x": 6119,
+    "y": 1572,
+    "bx0": 6071,
+    "by0": 1547,
+    "bx1": 6167,
+    "by1": 1597
   },
   "K01-43": {
-    "x": 1432,
-    "y": 1822,
-    "bx0": 1344,
-    "by0": 1751,
-    "bx1": 1520,
-    "by1": 1892
+    "x": 1431,
+    "y": 1831,
+    "bx0": 1383,
+    "by0": 1807,
+    "bx1": 1479,
+    "by1": 1856
   },
   "K01-24": {
-    "x": 2118,
-    "y": 1822,
-    "bx0": 2030,
-    "by0": 1751,
-    "bx1": 2206,
-    "by1": 1892
+    "x": 2117,
+    "y": 1831,
+    "bx0": 2069,
+    "by0": 1807,
+    "bx1": 2165,
+    "by1": 1856
   },
   "K01-21": {
-    "x": 589,
-    "y": 2252,
-    "bx0": 501,
-    "by0": 2181,
-    "bx1": 677,
-    "by1": 2322
+    "x": 587,
+    "y": 2261,
+    "bx0": 539,
+    "by0": 2236,
+    "bx1": 635,
+    "by1": 2286
   },
   "K01-12": {
-    "x": 588,
-    "y": 3588,
-    "bx0": 500,
-    "by0": 3518,
-    "bx1": 676,
-    "by1": 3659
+    "x": 587,
+    "y": 3599,
+    "bx0": 539,
+    "by0": 3574,
+    "bx1": 635,
+    "by1": 3624
   },
   "K01-42": {
-    "x": 6120,
-    "y": 1971,
-    "bx0": 6032,
-    "by0": 1900,
-    "bx1": 6208,
-    "by1": 2042
+    "x": 6119,
+    "y": 1981,
+    "bx0": 6071,
+    "by0": 1956,
+    "bx1": 6167,
+    "by1": 2006
   },
   "K01-30": {
-    "x": 6120,
-    "y": 2974,
-    "bx0": 6032,
-    "by0": 2903,
-    "bx1": 6208,
-    "by1": 3044
+    "x": 6119,
+    "y": 2983,
+    "bx0": 6071,
+    "by0": 2958,
+    "bx1": 6167,
+    "by1": 3008
   },
   "K01-31": {
-    "x": 6121,
-    "y": 3096,
-    "bx0": 6033,
-    "by0": 3026,
-    "bx1": 6209,
-    "by1": 3167
+    "x": 6119,
+    "y": 3107,
+    "bx0": 6071,
+    "by0": 3082,
+    "bx1": 6167,
+    "by1": 3131
   },
   "K01-15": {
-    "x": 6120,
-    "y": 3156,
-    "bx0": 6032,
-    "by0": 3085,
-    "bx1": 6208,
-    "by1": 3226
+    "x": 6119,
+    "y": 3166,
+    "bx0": 6071,
+    "by0": 3141,
+    "bx1": 6167,
+    "by1": 3190
   },
   "K01-32": {
-    "x": 6120,
-    "y": 3324,
-    "bx0": 6032,
-    "by0": 3254,
-    "bx1": 6208,
-    "by1": 3395
+    "x": 6119,
+    "y": 3334,
+    "bx0": 6071,
+    "by0": 3310,
+    "bx1": 6167,
+    "by1": 3359
   },
   "K01-33": {
-    "x": 6120,
-    "y": 3490,
-    "bx0": 6032,
-    "by0": 3420,
-    "bx1": 6208,
-    "by1": 3561
+    "x": 6119,
+    "y": 3501,
+    "bx0": 6071,
+    "by0": 3474,
+    "bx1": 6167,
+    "by1": 3528
   },
   "K01-34": {
-    "x": 6120,
-    "y": 3752,
-    "bx0": 6032,
-    "by0": 3681,
-    "bx1": 6208,
-    "by1": 3822
+    "x": 6119,
+    "y": 3763,
+    "bx0": 6071,
+    "by0": 3736,
+    "bx1": 6167,
+    "by1": 3789
   },
   "K01-35": {
-    "x": 5102,
-    "y": 4486,
-    "bx0": 5014,
-    "by0": 4416,
-    "bx1": 5190,
-    "by1": 4557
+    "x": 5101,
+    "y": 4497,
+    "bx0": 5053,
+    "by0": 4471,
+    "bx1": 5149,
+    "by1": 4524
   },
   "K01-36": {
-    "x": 4467,
-    "y": 4294,
-    "bx0": 4379,
-    "by0": 4224,
-    "bx1": 4555,
-    "by1": 4365
+    "x": 4466,
+    "y": 4304,
+    "bx0": 4418,
+    "by0": 4278,
+    "bx1": 4514,
+    "by1": 4331
   }
 };
 
@@ -191,7 +191,7 @@ img.onload = function() {
   setTimeout(() => status.style.display = "none", 3000);
   checkDeepLink();
 };
-img.src = "T2.11B.png";
+img.src = "T2.11B.png?v=nov2026";
 
 function applyTransform() {
   canvas.style.transform = `translate(${offX}px, ${offY}px) scale(${scale})`;

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>T2.14B — St. Ignatius Camera Plan</title>
+<title>T2.14B — St. Ignatius Camera Plan (November 2026)</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: #1a1a2e; color: #eee; font-family: Arial, sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
@@ -24,7 +24,7 @@
 </head>
 <body>
 <div id="toolbar">
-  <h1>ST. IGNATIUS — T2.14B</h1>
+  <h1>ST. IGNATIUS — T2.10B</h1>
   <div id="cam-info">No camera selected</div>
   <span>Scroll/pinch to zoom · Drag to pan</span>
   <div id="zoom-controls">
@@ -49,20 +49,20 @@ const BASE_URL = "https://dynamicsecuritytech.github.io/st-ignatius-cameras";
 // Camera coordinates on the image (pixels at 3.0x scale)
 const CAM_COORDS = {
   "KRF-02": {
-    "x": 1176,
-    "y": 3114,
-    "bx0": 1086,
-    "by0": 3043,
-    "bx1": 1267,
-    "by1": 3184
+    "x": 1234,
+    "y": 3109,
+    "bx0": 1186,
+    "by0": 3084,
+    "bx1": 1283,
+    "by1": 3133
   },
   "KRF-01": {
-    "x": 1178,
-    "y": 3342,
-    "bx0": 1087,
-    "by0": 3271,
-    "bx1": 1269,
-    "by1": 3413
+    "x": 1235,
+    "y": 3327,
+    "bx0": 1187,
+    "by0": 3302,
+    "bx1": 1283,
+    "by1": 3352
   }
 };
 
@@ -87,7 +87,7 @@ img.onload = function() {
   setTimeout(() => status.style.display = "none", 3000);
   checkDeepLink();
 };
-img.src = "T2.14B.png";
+img.src = "T2.14B.png?v=nov2026";
 
 function applyTransform() {
   canvas.style.transform = `translate(${offX}px, ${offY}px) scale(${scale})`;

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>T2.12B — St. Ignatius Camera Plan</title>
+<title>T2.12B — St. Ignatius Camera Plan (November 2026)</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: #1a1a2e; color: #eee; font-family: Arial, sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
@@ -24,7 +24,7 @@
 </head>
 <body>
 <div id="toolbar">
-  <h1>ST. IGNATIUS — T2.12B</h1>
+  <h1>ST. IGNATIUS — T2.10B</h1>
   <div id="cam-info">No camera selected</div>
   <span>Scroll/pinch to zoom · Drag to pan</span>
   <div id="zoom-controls">
@@ -49,36 +49,36 @@ const BASE_URL = "https://dynamicsecuritytech.github.io/st-ignatius-cameras";
 // Camera coordinates on the image (pixels at 3.0x scale)
 const CAM_COORDS = {
   "K02-08": {
-    "x": 604,
-    "y": 3056,
-    "bx0": 516,
-    "by0": 2986,
-    "bx1": 692,
-    "by1": 3127
+    "x": 603,
+    "y": 3067,
+    "bx0": 555,
+    "by0": 3042,
+    "bx1": 651,
+    "by1": 3091
   },
   "K02-15": {
-    "x": 4723,
-    "y": 4512,
-    "bx0": 4635,
-    "by0": 4442,
-    "bx1": 4811,
-    "by1": 4583
+    "x": 4721,
+    "y": 4522,
+    "bx0": 4673,
+    "by0": 4497,
+    "bx1": 4770,
+    "by1": 4547
   },
   "K02-21": {
-    "x": 4763,
-    "y": 1184,
-    "bx0": 4675,
-    "by0": 1113,
-    "bx1": 4851,
-    "by1": 1254
+    "x": 4760,
+    "y": 1194,
+    "bx0": 4712,
+    "by0": 1169,
+    "bx1": 4808,
+    "by1": 1218
   },
   "K02-11": {
-    "x": 2074,
-    "y": 1806,
-    "bx0": 1986,
-    "by0": 1736,
-    "bx1": 2162,
-    "by1": 1877
+    "x": 2071,
+    "y": 1816,
+    "bx0": 2023,
+    "by0": 1791,
+    "bx1": 2120,
+    "by1": 1841
   }
 };
 
@@ -103,7 +103,7 @@ img.onload = function() {
   setTimeout(() => status.style.display = "none", 3000);
   checkDeepLink();
 };
-img.src = "T2.12B.png";
+img.src = "T2.12B.png?v=nov2026";
 
 function applyTransform() {
   canvas.style.transform = `translate(${offX}px, ${offY}px) scale(${scale})`;
