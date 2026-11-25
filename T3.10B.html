@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>T3.10B — St. Ignatius Camera Plan</title>
+<title>T3.10B — St. Ignatius Camera Plan (November 2026)</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: #1a1a2e; color: #eee; font-family: Arial, sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
@@ -24,7 +24,7 @@
 </head>
 <body>
 <div id="toolbar">
-  <h1>ST. IGNATIUS — T3.10B</h1>
+  <h1>ST. IGNATIUS — T2.10B</h1>
   <div id="cam-info">No camera selected</div>
   <span>Scroll/pinch to zoom · Drag to pan</span>
   <div id="zoom-controls">
@@ -49,108 +49,108 @@ const BASE_URL = "https://dynamicsecuritytech.github.io/st-ignatius-cameras";
 // Camera coordinates on the image (pixels at 3.0x scale)
 const CAM_COORDS = {
   "K00-06": {
-    "x": 1026,
-    "y": 2407,
-    "bx0": 937,
-    "by0": 2336,
-    "bx1": 1114,
-    "by1": 2478
+    "x": 1087,
+    "y": 2419,
+    "bx0": 1039,
+    "by0": 2394,
+    "bx1": 1135,
+    "by1": 2444
   },
   "K00-05": {
-    "x": 1026,
-    "y": 2608,
-    "bx0": 937,
-    "by0": 2537,
-    "bx1": 1114,
-    "by1": 2678
+    "x": 1087,
+    "y": 2615,
+    "bx0": 1039,
+    "by0": 2590,
+    "bx1": 1135,
+    "by1": 2640
   },
   "K00-03": {
-    "x": 1026,
-    "y": 2807,
-    "bx0": 937,
-    "by0": 2736,
-    "bx1": 1114,
-    "by1": 2878
+    "x": 1087,
+    "y": 2810,
+    "bx0": 1039,
+    "by0": 2785,
+    "bx1": 1135,
+    "by1": 2835
   },
   "K00-02": {
-    "x": 1026,
-    "y": 3298,
-    "bx0": 937,
-    "by0": 3228,
-    "bx1": 1114,
-    "by1": 3369
+    "x": 1087,
+    "y": 3289,
+    "bx0": 1039,
+    "by0": 3265,
+    "bx1": 1135,
+    "by1": 3314
   },
   "K00-07": {
-    "x": 1542,
-    "y": 1072,
-    "bx0": 1453,
-    "by0": 1001,
-    "bx1": 1630,
-    "by1": 1143
+    "x": 1591,
+    "y": 1117,
+    "bx0": 1542,
+    "by0": 1092,
+    "bx1": 1639,
+    "by1": 1142
   },
   "K00-08": {
-    "x": 4002,
-    "y": 1072,
-    "bx0": 3914,
-    "by0": 1001,
-    "bx1": 4091,
-    "by1": 1143
+    "x": 3992,
+    "y": 1117,
+    "bx0": 3944,
+    "by0": 1092,
+    "bx1": 4040,
+    "by1": 1142
   },
   "K00-19": {
-    "x": 6194,
-    "y": 1888,
-    "bx0": 6105,
-    "by0": 1817,
-    "bx1": 6283,
-    "by1": 1959
+    "x": 6129,
+    "y": 1913,
+    "bx0": 6081,
+    "by0": 1888,
+    "bx1": 6177,
+    "by1": 1938
   },
   "K00-18": {
-    "x": 6194,
-    "y": 3332,
-    "bx0": 6105,
-    "by0": 3261,
-    "bx1": 6283,
-    "by1": 3402
+    "x": 6129,
+    "y": 3321,
+    "bx0": 6081,
+    "by0": 3297,
+    "bx1": 6177,
+    "by1": 3346
   },
   "K00-17": {
-    "x": 6194,
-    "y": 3610,
-    "bx0": 6105,
-    "by0": 3539,
-    "bx1": 6283,
-    "by1": 3680
+    "x": 6129,
+    "y": 3593,
+    "bx0": 6081,
+    "by0": 3568,
+    "bx1": 6177,
+    "by1": 3617
   },
   "K00-11": {
-    "x": 6196,
-    "y": 2644,
-    "bx0": 6107,
-    "by0": 2573,
-    "bx1": 6284,
-    "by1": 2715
+    "x": 6129,
+    "y": 2651,
+    "bx0": 6081,
+    "by0": 2626,
+    "bx1": 6177,
+    "by1": 2675
   },
   "K00-09": {
-    "x": 6194,
-    "y": 2439,
-    "bx0": 6105,
-    "by0": 2368,
-    "bx1": 6283,
-    "by1": 2510
+    "x": 6129,
+    "y": 2451,
+    "bx0": 6081,
+    "by0": 2426,
+    "bx1": 6177,
+    "by1": 2475
   },
   "K00-12": {
-    "x": 4738,
-    "y": 4658,
-    "bx0": 4650,
-    "by0": 4587,
-    "bx1": 4827,
-    "by1": 4729
+    "x": 4709,
+    "y": 4616,
+    "bx0": 4661,
+    "by0": 4591,
+    "bx1": 4757,
+    "by1": 4641
   },
   "K00-15": {
-    "x": 6194,
-    "y": 2856,
-    "bx0": 6105,
-    "by0": 2785,
-    "bx1": 6283,
-    "by1": 2927
+    "x": 6129,
+    "y": 2858,
+    "bx0": 6081,
+    "by0": 2833,
+    "bx1": 6177,
+    "by1": 2883
   }
 };
 
@@ -175,7 +175,7 @@ img.onload = function() {
   setTimeout(() => status.style.display = "none", 3000);
   checkDeepLink();
 };
-img.src = "T3.10B.png";
+img.src = "T3.10B.png?v=nov2026";
 
 function applyTransform() {
   canvas.style.transform = `translate(${offX}px, ${offY}px) scale(${scale})`;

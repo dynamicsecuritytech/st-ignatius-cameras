@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>T3.13B — St. Ignatius Camera Plan</title>
+<title>T3.13B — St. Ignatius Camera Plan (November 2026)</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: #1a1a2e; color: #eee; font-family: Arial, sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
@@ -24,7 +24,7 @@
 </head>
 <body>
 <div id="toolbar">
-  <h1>ST. IGNATIUS — T3.13B</h1>
+  <h1>ST. IGNATIUS — T2.10B</h1>
   <div id="cam-info">No camera selected</div>
   <span>Scroll/pinch to zoom · Drag to pan</span>
   <div id="zoom-controls">
@@ -49,92 +49,92 @@ const BASE_URL = "https://dynamicsecuritytech.github.io/st-ignatius-cameras";
 // Camera coordinates on the image (pixels at 3.0x scale)
 const CAM_COORDS = {
   "K03-11": {
-    "x": 6248,
-    "y": 1823,
-    "bx0": 6160,
-    "by0": 1752,
-    "bx1": 6337,
-    "by1": 1894
+    "x": 6182,
+    "y": 1850,
+    "bx0": 6134,
+    "by0": 1825,
+    "bx1": 6230,
+    "by1": 1875
   },
   "K03-22": {
-    "x": 580,
-    "y": 3558,
-    "bx0": 491,
-    "by0": 3487,
-    "bx1": 668,
-    "by1": 3629
+    "x": 652,
+    "y": 3542,
+    "bx0": 604,
+    "by0": 3517,
+    "bx1": 700,
+    "by1": 3567
   },
   "K03-18": {
-    "x": 3324,
-    "y": 4485,
-    "bx0": 3235,
-    "by0": 4414,
-    "bx1": 3412,
-    "by1": 4556
+    "x": 3330,
+    "y": 4447,
+    "bx0": 3282,
+    "by0": 4422,
+    "bx1": 3378,
+    "by1": 4472
   },
   "K03-14": {
-    "x": 6248,
-    "y": 3890,
-    "bx0": 6159,
-    "by0": 3819,
-    "bx1": 6336,
-    "by1": 3960
+    "x": 6182,
+    "y": 3866,
+    "bx0": 6134,
+    "by0": 3841,
+    "bx1": 6230,
+    "by1": 3891
   },
   "K03-13": {
-    "x": 6248,
-    "y": 3476,
-    "bx0": 6159,
-    "by0": 3405,
-    "bx1": 6336,
-    "by1": 3546
+    "x": 6182,
+    "y": 3462,
+    "bx0": 6134,
+    "by0": 3437,
+    "bx1": 6230,
+    "by1": 3486
   },
   "K03-25": {
-    "x": 6248,
-    "y": 3204,
-    "bx0": 6159,
-    "by0": 3134,
-    "bx1": 6336,
-    "by1": 3275
+    "x": 6182,
+    "y": 3197,
+    "bx0": 6134,
+    "by0": 3173,
+    "bx1": 6230,
+    "by1": 3222
   },
   "K03-12": {
-    "x": 6248,
-    "y": 2241,
-    "bx0": 6159,
-    "by0": 2170,
-    "bx1": 6336,
-    "by1": 2312
+    "x": 6182,
+    "y": 2258,
+    "bx0": 6134,
+    "by0": 2233,
+    "bx1": 6230,
+    "by1": 2283
   },
   "K03-10": {
-    "x": 6248,
-    "y": 2352,
-    "bx0": 6159,
-    "by0": 2281,
-    "bx1": 6336,
-    "by1": 2423
+    "x": 6182,
+    "y": 2366,
+    "bx0": 6134,
+    "by0": 2341,
+    "bx1": 6230,
+    "by1": 2391
   },
   "K03-21": {
-    "x": 580,
-    "y": 3837,
-    "bx0": 492,
-    "by0": 3766,
-    "bx1": 669,
-    "by1": 3908
+    "x": 652,
+    "y": 3815,
+    "bx0": 604,
+    "by0": 3790,
+    "bx1": 700,
+    "by1": 3840
   },
   "K03-19": {
-    "x": 2252,
-    "y": 4485,
-    "bx0": 2164,
-    "by0": 4414,
-    "bx1": 2341,
-    "by1": 4556
+    "x": 2284,
+    "y": 4447,
+    "bx0": 2236,
+    "by0": 4422,
+    "bx1": 2332,
+    "by1": 4472
   },
   "K03-17": {
-    "x": 4340,
-    "y": 4485,
-    "bx0": 4251,
-    "by0": 4414,
-    "bx1": 4429,
-    "by1": 4556
+    "x": 4321,
+    "y": 4447,
+    "bx0": 4273,
+    "by0": 4422,
+    "bx1": 4369,
+    "by1": 4472
   }
 };
 
@@ -159,7 +159,7 @@ img.onload = function() {
   setTimeout(() => status.style.display = "none", 3000);
   checkDeepLink();
 };
-img.src = "T3.13B.png";
+img.src = "T3.13B.png?v=nov2026";
 
 function applyTransform() {
   canvas.style.transform = `translate(${offX}px, ${offY}px) scale(${scale})`;
